@@ -6,7 +6,7 @@ pipeline {
         stage('Checkout from GitHub') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/ManojKumar-2402/node-k8s-app.git'
+                    url: 'https://github.com/ManojKumar-2402/node-k8s-app1.git'
             }
         }
 
@@ -19,42 +19,19 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                docker build -t my-k8s-app:${BUILD_NUMBER} .
-                docker tag my-k8s-app:${BUILD_NUMBER} manojdoc123/my-k8s-app:${BUILD_NUMBER}
+                docker build -t my-k8s-app1:${BUILD_NUMBER} .
+                docker tag my-k8s-app1:${BUILD_NUMBER} manojdoc123/my-k8s-app1:${BUILD_NUMBER}
                 '''
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push manojdoc123/my-k8s-app:${BUILD_NUMBER}'
-            }
-        }
-
-    stage('Start Minikube if not running') {
-    steps {
-        sh '''
-        if ! minikube status | grep -q "apiserver: Running"; then
-            echo "Minikube is not running. Starting now..."
-            minikube start --driver=docker --memory=2048 --cpus=2
-        fi
-        '''
-    }
-}
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh '''
-                # Replace image tag inside deployment.yaml
-                sed -i "s/IMAGE_TAG/${BUILD_NUMBER}/g" k8s/deployment.yaml
-
-                # Load image into Minikube
-                minikube image load laxmi916/my-k8s-app:${BUILD_NUMBER}
-
-                # Apply manifests
-                minikube kubectl -- apply -f k8s/deployment.yaml
-                minikube kubectl -- apply -f k8s/service.yaml
-                '''
+                withDockerRegistry([credentialsId: 'dockerhub-creds', url: 'https://index.docker.io/v1/']) {
+                    sh '''
+                    docker push manojdoc123/my-k8s-app1:${BUILD_NUMBER}
+                    '''
+                }
             }
         }
     }
